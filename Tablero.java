@@ -110,6 +110,19 @@ public class Tablero {
         } while (contadorCasillasActivas < casillasActivas);
 
     }
+    //Devuelve falso si alguna de las luces está encendida
+    public boolean verificarTablero (Casilla tablero [][]) {
+
+        for (int i = 0; i < tablero.length; i++) {
+            for (int j = 0; j < tablero[0].length; j++) {
+
+                if (tablero[i][j].estado == Casilla.Estado.ENCENDIDO) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
     //Clase interna para mejorar la organización del código
     private class Casilla {

@@ -1,3 +1,4 @@
+import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -5,177 +6,117 @@ public class Partida {
 
     private Timer temporizador;
     private int segundos;
+    private int contadorSegundos;
+    private Tablero tablero;
     private boolean partidaTerminada;
     int i = 0;
 
-    public Partida(int segundos) {
+    //Constructor que solo recibe la longitud de la matriz, con tiempo infinito
+    public Partida(int longitud) {
+        this.temporizador = new Timer();
+        this.tablero = new Tablero(longitud);
+    }
+    //Constructor que recibe la longitud y el número de casillas activas, con tiempo infinito
+    public Partida(int longitud, int casillasActivas) {
+        this.temporizador = new Timer();
+        this.tablero = new Tablero(longitud, casillasActivas);
+    }
+    //Constructor que recibe la longitud, el número de casillas activas y el tiempo de partida
+    public Partida(int segundos, int longitud, int casillasActivas) {
         this.temporizador = new Timer();
         this.segundos = segundos;
+        this.tablero = new Tablero(longitud, casillasActivas);
     }
+
+    /*
+    * Iba a crear un constructor que permitiera crear una partida solo con la longitud del array
+    * y el número de casillas activas, pero Java no permite crear dos constructores con el mismo
+    * número y tipo de parámetros, aunque tengan nombres diferentes, ya que no puede diferenciarlos.
+    */
+
 
     /**
      * Este método inicia un temporizador utilizando la clase Timer, que recibe una
-     * instancia de TimerTask. Para simplificarlo, he implementado esta tarea como
-     * una clase anónima.
+     * instancia de TimerTask. Esta instancia la he hecho utilizando una clase anónima,
+     * que tiene su propia impleentación del método run.
      *
-     * Las clases anónimas pueden acceder a variables locales del método exterior,
-     * siempre que estas sean constantes. Como quería contar la cantidad de segundos que pasan
-     * y modificar esta variable desde la clase anónima, necesitaba usar una estructura
-     * mutable.
-     *
-     * Para ello, he utilizado un array, ya que la referencia del array se mantiene constante
-     * y su contenido puede modificarse dentro de la clase anónima.
-     *
-     * @param segundos
+     * Concretamente, esta implementación termina la partida una vez pasado el tiempo indicado, en segundos,
+     * en la instanciación de la Partida.
      */
 
-
-
-    private void iniciarTemporizador(int segundos) {
-        final int[] contadorSegundos = {0};
-
-        while(contadorSegundos[0] <= segundos) {
-            temporizador.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    contadorSegundos[0]++;
+    public void iniciarTemporizador() {
+        TimerTask tarea = new TimerTask() {
+            @Override
+            public void run() {
+                contadorSegundos++; //Aumenta el contador de segundos cada segundo
+                if (contadorSegundos >= segundos) {
+                    temporizador.cancel(); // Cierra el flujo del temporizador
+                    System.out.println("¡¡¡TIEMPO!!!");
+                    partidaTerminada = true; // Termina la partida
                 }
-            }, 0, 1000);
-        }
-
-        temporizador.cancel(); //Cerramos el hilo que maneja el temporizador
-
-        terminarPartida();
-
+            }
+        };
+        temporizador.scheduleAtFixedRate(tarea, 0, 1000); // Ejecutar cada segundo
     }
 
     public void menu (){
 
         System.out.println("\nMenú de opciones\n"
                 + "1. Lights (Encender o apagar luces).\n"
-                + "2. Guardar partida.\n"
-                + "Para finalizar la partida, ingresa '00'.");
+                + "2. Cargar fichero.\n"
+                + "00. Finalizar partida.");
     }
 
-//    public boolean esGanador() {
-//        int contadorMinasMarcadas = 0;
-//        for (int i = 0; i < this.filas; i++) {
-//            for (int j = 0; j < this.filas; j++) {
-//                if (tablero[i][j].tieneMina() && tablero[i][j].isMarcada()){
-//                    contadorMinasMarcadas++; //Si la mina está marcada y tiene una bomba
-//                }
-//            }
-//        }
-//        if(contadorMinasMarcadas == numeroMinas){ //Si has marcado todas las minas, has ganado :)
-//            return true;
-//        }
-//        return false;
-//    }
-//
-//    public void iniciarPartida() {
-//
-//        Scanner teclado = new Scanner(System.in);
-//        while (!juegoTerminado) {
-//            mostrarTablero();
-//            menu();
-//            int opcion = teclado.nextInt();
-//            switch (opcion) {
-//
-//                case 1 -> {
-//                    System.out.println("\nIntroduce la fila y columna a abrir (separados por un espacio):");
-//                    int fila = teclado.nextInt();
-//                    int col = teclado.nextInt();
-//
-//                    if (fila < 0 || fila >= this.filas || col < 0 || col >= this.filas) {
-//                        System.out.println("Coordenadas inválidas. Inténtalo de nuevo.");
-//                        continue; //Pasa a la siguiente iteración del bucle directamente
-//                    }
-//
-//                    if (tablero[fila][col].isAbierta()) {
-//                        System.out.println("Esta casilla ya ha sido descubierta. Prueba con otra.");
-//                        continue; //Pasa a la siguiente iteración del bucle directamente
-//                    }
-//
-//                    // Si la casilla tiene mina, el juego se termina.
-//                    if (tablero[fila][col].tieneMina()) {
-//                        System.out.println("¡Boooooooooooooom! \u001B[31mHas perdido.\u001B[0m");
-//                        abrirMinas();
-//                        mostrarTablero();
-//                        juegoTerminado = true;
-//                    } else {
-//                        // Revela la casilla y sus vecinas.
-//                        abrirCasilla(fila, col);
-//                    }
-//
-//                }
-//
-//                case 2 -> {
-//                    System.out.println("\nIntroduce la fila y columna a marcar (separados por un espacio):");
-//                    int fila = teclado.nextInt();
-//                    int col = teclado.nextInt();
-//
-//                    if (fila < 0 || fila >= this.filas || col < 0 || col >= this.filas) {
-//                        System.out.println("Coordenadas inválidas. Inténtalo de nuevo.");
-//                        continue; //Pasa a la siguiente iteración del bucle directamente
-//                    }
-//
-//                    if (tablero[fila][col].isAbierta()) {
-//                        System.out.println("Esta casilla ya ha sido descubierta. Prueba con otra.");
-//                        continue; //Pasa a la siguiente iteración del bucle directamente
-//                    }
-//
-//                    marcarCasilla(fila, col); //Marcamos o desmarcamos la casilla
-//
-//                    if (esGanador()) { //Verificamos si ha ganado o no
-//                        System.out.println("\u001B[32m¡Felicidades! Has ganado el juego.\u001B[0m");
-//                        abrirMinas();
-//                        mostrarTablero();
-//                        juegoTerminado = true;
-//                    }
-//
-//                }
-//                case 3 -> {
-//
-//                    System.out.println("\nIntroduce la fila y columna en la que quieras poner o quitar tu duda (separados por un espacio):");
-//                    int fila = teclado.nextInt();
-//                    int col = teclado.nextInt();
-//
-//                    if (fila < 0 || fila >= this.filas || col < 0 || col >= this.filas) {
-//                        System.out.println("Coordenadas inválidas. Inténtalo de nuevo.");
-//                        continue; //Pasa a la siguiente iteración del bucle directamente
-//                    }
-//
-//                    if (tablero[fila][col].isAbierta()) {
-//                        System.out.println("Esta casilla ya ha sido descubierta. Prueba con otra.");
-//                        continue; //Pasa a la siguiente iteración del bucle directamente
-//                    }
-//
-//                    dudaCasilla(fila, col);
-//
-//                }
-//
-//                default -> System.out.println("\n\u001B[31mValor inválido\u001B[0m");
-//
-//            }
-//
-//        }
-//
-//
-//    }
-//
-    public void prueba() {
+    public boolean esGanador() {
 
-        partidaTerminada = false;
-        iniciarTemporizador(10);
-        do {
-            System.out.println(i);
-            i++;
-        } while (!partidaTerminada);
+    }
+
+    public void iniciarPartida(Tablero[][] tablero) {
+
+        Scanner teclado = new Scanner(System.in);
+        while (!partidaTerminada) {
+            menu();
+            int opcion = teclado.nextInt();
+            switch (opcion) {
+
+                case 1 -> {
+                    System.out.println("\nIntroduce la fila y columna de la luz que desea apagar o encender. (separados por un espacio):");
+                    int fila = teclado.nextInt();
+                    int col = teclado.nextInt();
+
+                    if (fila < 0 || fila >= tablero.length || col < 0 || col >= tablero.length) {
+                        System.out.println("Coordenadas incorrectas, inténtalo de nuevo.");
+                        continue; //Pasa a la siguiente iteración del bucle directamente
+                    }
+
+                    if (tablero.verificarTablero(this.tablero)) {
+
+                        juegoTerminado = true;
+                    } else {
+
+                    }
+
+                }
+
+                case 2 -> {
+
+                }
+                case 00 -> {
+                    terminarPartida();
+                }
+
+                default -> System.out.println("\n\u001B[31mValor inválido\u001B[0m");
+
+            }
+
+        }
+
+
     }
 
     private void terminarPartida() {
-        System.out.println("¡¡¡TIEMPO!!!");
         partidaTerminada = true;
+        System.out.println(esGanador() ? "¡Has apagado todas las luces, enhorabuena!" : "Una pena que no quieras continuar");
     }
 
 }
