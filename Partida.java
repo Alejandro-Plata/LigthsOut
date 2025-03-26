@@ -1,15 +1,24 @@
+package LigthsOut;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class Partida {
 
-    private Timer temporizador;
-    private int segundos;
-    private int contadorSegundos;
-    private Tablero tablero;
     private boolean partidaTerminada;
-    int i = 0;
+    private int tiempoMaximo;
+    private int contadorSegundos;
+    private String modo;
+    private Tablero tablero;
+    private Timer temporizador;
+
+    /* * * * * * * * * * * *
+     *    Constructores    *
+     * * * * * * * * * * * */
 
     //Constructor que solo recibe la longitud de la matriz, con tiempo infinito
     public Partida(int longitud) {
@@ -22,56 +31,98 @@ public class Partida {
         this.tablero = new Tablero(longitud, casillasActivas);
     }
     //Constructor que recibe la longitud, el número de casillas activas y el tiempo de partida
-    public Partida(int segundos, int longitud, int casillasActivas) {
+    public Partida(int tiempoMaximo, int longitud, int casillasActivas) {
         this.temporizador = new Timer();
-        this.segundos = segundos;
+        this.tiempoMaximo = tiempoMaximo;
         this.tablero = new Tablero(longitud, casillasActivas);
     }
 
-    /*
-    * Iba a crear un constructor que permitiera crear una partida solo con la longitud del array
-    * y el número de casillas activas, pero Java no permite crear dos constructores con el mismo
-    * número y tipo de parámetros, aunque tengan nombres diferentes, ya que no puede diferenciarlos.
-    */
+    /* * * * * * * * * * * *
+     *  Getters y Setters  *
+     * * * * * * * * * * * */
 
-
-    /**
-     * Este método inicia un temporizador utilizando la clase Timer, que recibe una
-     * instancia de TimerTask. Esta instancia la he hecho utilizando una clase anónima,
-     * que tiene su propia impleentación del método run.
-     *
-     * Concretamente, esta implementación termina la partida una vez pasado el tiempo indicado, en segundos,
-     * en la instanciación de la Partida.
-     */
-
-    public void iniciarTemporizador() {
-        TimerTask tarea = new TimerTask() {
-            @Override
-            public void run() {
-                contadorSegundos++; //Aumenta el contador de segundos cada segundo
-                if (contadorSegundos >= segundos) {
-                    temporizador.cancel(); // Cierra el flujo del temporizador
-                    System.out.println("¡¡¡TIEMPO!!!");
-                    partidaTerminada = true; // Termina la partida
-                }
-            }
-        };
-        temporizador.scheduleAtFixedRate(tarea, 0, 1000); // Ejecutar cada segundo
+    //Getter personalizado que permite saber cuántos segundos quedan (a implementar en la partida)
+    public int getSegundosRestantes () {
+        return this.tiempoMaximo - this.contadorSegundos;
     }
 
-    public void menu (){
+    public String getModo() {
+        return this.modo;
+    }
 
-        System.out.println("\nMenú de opciones\n"
-                + "1. Lights (Encender o apagar luces).\n"
-                + "2. Cargar fichero.\n"
-                + "00. Finalizar partida.");
+    public void setModo(String modo) {
+
+        if (!(modo.equalsIgnoreCase("ALEATORIO") || modo.equalsIgnoreCase("PERSONALIZADO"))){
+            throw new IllegalArgumentException("El modo debe ser 'Aleatorio' o 'Personalizado', no se conoce el modo " + modo);
+        }
+        this.modo = modo;
+
+    }
+
+    public void setTiempoMaximo(int tiempoMaximo) {
+
+        if (tiempoMaximo < 0) {
+            throw new IllegalArgumentException("La duración de la partida no puede ser negativa");
+        }
+
+        this.tiempoMaximo = tiempoMaximo;
+    }
+
+
+    /* * * * * * * * * * * *
+     *       Métodos       *
+     * * * * * * * * * * * */
+
+    private void configurarJuego () throws IOException {
+
+        BufferedReader lector = new BufferedReader(new FileReader("config.txt"));
+        String texto;
+        String [] dividirTexto;
+        Integer [] contenidoTablero = new Integer[this.tablero.getLongitud() * this.tablero.getLongitud()];
+        //Actualiza el texto dentro del bucle, lee línea a línea el documento
+        while ((texto = lector.readLine()) != null) {
+
+            if (texto.startsWith("Tamaño:")) {
+
+                this.tablero.setLongitud(Integer.parseInt(texto.split(":")[1].trim())); //Separamos el texto por los 2 puntos y le quitamos los espacios en blanco
+
+            } else if (texto.startsWith("Modo:")) {
+
+                setModo(texto.split(":")[1].trim());
+
+            } else if (texto.startsWith("Casillas activas:")) {
+
+                if (this.modo.equalsIgnoreCase("Aleatorio")) { //Si no es aleatorio, se ignorará
+                    this.tablero.setCasillasActivas(Integer.parseInt(texto.split(":")[1].trim()));
+                }
+
+            } else if (texto.startsWith("Duración:")) {
+
+                setTiempoMaximo(Integer.parseInt(texto.split(":")[1].trim()));
+
+            } else if (texto.startsWith("Tablero:\n")) {
+
+                if (this.modo.equalsIgnoreCase("Personalizado")) { //Si no es aleatorio, se ignorará
+
+                    while ((texto = lector.readLine()) != null) {
+
+                    }
+
+                }
+
+
+            }
+
+        }
+
+
     }
 
     public boolean esGanador() {
-
+        return true;
     }
 
-    public void iniciarPartida(Tablero[][] tablero) {
+    public void iniciarPartida(Tablero.Casilla[][] tablero) {
 
         Scanner teclado = new Scanner(System.in);
         while (!partidaTerminada) {
@@ -89,10 +140,11 @@ public class Partida {
                         continue; //Pasa a la siguiente iteración del bucle directamente
                     }
 
-                    if (tablero.verificarTablero(this.tablero)) {
-
-                        juegoTerminado = true;
+                    if (this.tablero.verificarTablero(tablero)) {
+                        partidaTerminada = true;
                     } else {
+
+
 
                     }
 
@@ -114,9 +166,41 @@ public class Partida {
 
     }
 
+    /**
+     * Este método inicia un temporizador utilizando la clase Timer, que recibe una
+     * instancia de TimerTask. Esta instancia la he hecho utilizando una clase anónima,
+     * que tiene su propia impleentación del método run.
+     *
+     * Concretamente, esta implementación termina la partida una vez pasado el tiempo indicado, en segundos,
+     * en la instanciación de la Partida.
+     */
+    public void iniciarTemporizador() {
+        TimerTask tarea = new TimerTask() {
+            @Override
+            public void run() {
+                contadorSegundos++; //Aumenta el contador de segundos cada segundo
+                if (contadorSegundos >= tiempoMaximo) {
+                    temporizador.cancel(); // Cierra el flujo del temporizador
+                    System.out.println("¡¡¡TIEMPO!!!");
+                    partidaTerminada = true; // Termina la partida
+                }
+            }
+        };
+        temporizador.scheduleAtFixedRate(tarea, 0, 1000); // Ejecutar cada segundo
+    }
+
+    public void menu (){
+
+        System.out.println("\nMenú de opciones\n"
+                + "1. Lights (Encender o apagar luces).\n"
+                + "2. Cargar fichero.\n"
+                + "00. Finalizar partida.");
+    }
+
     private void terminarPartida() {
         partidaTerminada = true;
         System.out.println(esGanador() ? "¡Has apagado todas las luces, enhorabuena!" : "Una pena que no quieras continuar");
     }
+
 
 }

@@ -1,0 +1,11 @@
+/* Bienvenido a la configuración de LightsOut. Se permite configurar el tamaño del tablero (en filas, entre 4 y 9). Además, puede
+configurarse si se desea que el tablero se construya aleatoriamente (Modo: aleatorio) o si se desea que sea personalizado, en cuyo caso el modo
+se indicará como "Personalizado" y se dibujará la estructura del tablero debajo de "Tablero:". Si desea jugar en modo aleatorio, puede configurar el número
+de luces encendidas a la hora de ejecutar el programa. Por último, si deseas un reto aún más complicado, puedes establecer 
+la duración, en segundos, de la partida. ¡Luces Fuera! */
+
+Tamaño:
+Modo:
+Casillas activas:
+Duración: 
+Tablero:
